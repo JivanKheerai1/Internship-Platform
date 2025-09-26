@@ -23,4 +23,90 @@ class User(db.Model):
     def check_password(self, password):
         """Check hashed password."""
         return check_password_hash(self.password, password)
+    
+class Student(db.Model):
+    __tablename__ = "student"
+    studentID = db.Column(db.Integer, primary_key=True)
+    studentName =  db.Column(db.String(20), nullable=False, unique=True)
+    degree = db.Column(db.String(20), nullable=False)
+    gpa = db.Column(db.Integer, nullable=False)
+    applications = db.relationship("Application", backref="student", lazy=True)
 
+    def __init__(self, studentID, gpa):
+        self.studentID = studentID
+        self.gpa = gpa
+
+    def view_all_applications(self):
+        return self.applications
+
+class Staff(db.Model):
+    __tablename__ = "staff"
+    staffID = db.Column(db.Integer, primary_key=True)
+    staffName =  db.Column(db.String(20), nullable=False, unique=True)
+    students = db.relationship("Student", backref="staff", lazy=True)
+    position = db.relationship("Position", backref="staff", lazy=True)
+    
+    def __init__(self, staffID):
+        self.staffID = staffID
+    
+    def add_student(self, position, students, status=False):
+        for student in students:
+            # position.shortlist.append(student)
+            # Check if an application already exists for this student/position
+            existing_application = Application.query.filter_by(
+                studentID=student.studentID,
+                positionID=position.positionID
+            ).first()
+
+            if not existing_application:
+                # Create a new application record
+                new_application = Application(
+                    studentID=student.studentID,
+                    positionID=position.positionID,
+                    status=status
+                )
+                db.session.add(new_application)
+
+        # Commit all new applications to the database
+        db.session.commit()
+
+class Employer(db.Model):
+    __tablename__ = "employer"
+    employerID = db.Column(db.Integer, primary_key=True)
+    employerName =  db.Column(db.String(20), nullable=False, unique=True)
+    companyName =  db.Column(db.String(20), nullable=False, unique=True)
+
+    def __init__(self, employerID):
+        self.employerID = employerID
+
+    def create_position(self, positionName):
+        new_position = Position(
+            positionName=positionName,
+            employerID=self.employerID
+        )
+        db.session.add(new_position)
+        db.session.commit()
+        return new_position
+
+    def updateStatus(self, student, application):
+        application.status = student.gpa > 2
+        db.session.commit()
+        return application.status        
+
+#created by employer
+class Position(db.Model):
+    __tablename__ = "position"
+    positionID = db.Column(db.Integer, primary_key=True)
+    positionName =  db.Column(db.String(20), nullable=False, unique=True)
+    employerID = db.Column(db.Integer, db.ForeignKey("employer.employerID"))
+    shortlist = db.relationship("Student", backref="position", lazy=True)
+    applications = db.relationship("Application", backref="position", lazy=True)
+
+#bridge table
+class Application(db.Model):
+    __tablename__ = "application"
+    applicationID = db.Column(db.Integer, primary_key=True)
+    positionID = db.Column(db.Integer, db.ForeignKey("position.positionID"))
+    positionName = db.Column(db.String(20), db.ForeignKey("position.positionName"))
+    studentID = db.Column(db.Integer, db.ForeignKey("student.studentID"))
+    status = db.Column(db.Boolean, nullable=False)

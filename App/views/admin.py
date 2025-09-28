@@ -19,3 +19,12 @@ class AdminView(ModelView):
 def setup_admin(app):
     admin = Admin(app, name='FlaskMVC', template_mode='bootstrap3')
     admin.add_view(AdminView(User, db.session))
+
+
+from flask import Blueprint
+
+admin_views = Blueprint('admin', __name__, url_prefix='/admin')
+
+@admin_views.route('/')
+def admin_home():
+    return "Admin Home"

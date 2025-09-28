@@ -23,7 +23,33 @@ class User(db.Model):
     def check_password(self, password):
         """Check hashed password."""
         return check_password_hash(self.password, password)
-    
+
+#bridge table
+class Application(db.Model):
+    __tablename__ = "application"
+    applicationID = db.Column(db.Integer, primary_key=True)
+    positionID = db.Column(db.Integer, db.ForeignKey("position.positionID"))
+    positionName = db.Column(db.String(20), db.ForeignKey("position.positionName"))
+    studentID = db.Column(db.Integer, db.ForeignKey("student.studentID"))
+    status = db.Column(db.Boolean, nullable=False)
+
+    student = db.relationship("Student", back_populates="applications", foreign_keys=[studentID])
+    position = db.relationship("Position", back_populates="applications", foreign_keys=[positionID])
+
+#association tables
+staff_student = db.Table(
+    'staff_student',
+    db.Column('staff_id', db.Integer, db.ForeignKey('staff.staffID'), primary_key=True),
+    db.Column('student_id', db.Integer, db.ForeignKey('student.studentID'), primary_key=True)
+)
+
+shortlist_table = db.Table(
+    "shortlist",
+    db.Column("position_id", db.Integer, db.ForeignKey("position.positionID"), primary_key=True),
+    db.Column("student_id", db.Integer, db.ForeignKey("student.studentID"), primary_key=True)
+)
+
+
 class Student(db.Model):
     __tablename__ = "student"
     studentID = db.Column(db.Integer, primary_key=True)
@@ -32,9 +58,19 @@ class Student(db.Model):
     gpa = db.Column(db.Integer, nullable=False)
     applications = db.relationship("Application", backref="student", lazy=True)
 
-    def __init__(self, studentID, gpa):
+    staffs = db.relationship("Staff", secondary=staff_student, back_populates="students")
+    applications = db.relationship("Application", back_populates="student", foreign_keys=[Application.studentID])
+    shortlisted_positions = db.relationship(
+        "Position",
+        secondary=shortlist_table,
+        back_populates="shortlist"
+    )
+
+    def __init__(self, studentID, gpa, studentName, degree):
         self.studentID = studentID
         self.gpa = gpa
+        self.studentName = studentName
+        self.degree = degree
 
     def view_all_applications(self):
         return self.applications
@@ -45,9 +81,12 @@ class Staff(db.Model):
     staffName =  db.Column(db.String(20), nullable=False, unique=True)
     students = db.relationship("Student", backref="staff", lazy=True)
     position = db.relationship("Position", backref="staff", lazy=True)
+
+    students = db.relationship("Student", secondary=staff_student, back_populates="staffs")
     
-    def __init__(self, staffID):
+    def __init__(self, staffID, staffName):
         self.staffID = staffID
+        self.staffName = staffName
     
     def add_student(self, position, students, status=False):
         for student in students:
@@ -76,13 +115,16 @@ class Employer(db.Model):
     employerName =  db.Column(db.String(20), nullable=False, unique=True)
     companyName =  db.Column(db.String(20), nullable=False, unique=True)
 
-    def __init__(self, employerID):
+    def __init__(self, employerID, employerName, companyName):
         self.employerID = employerID
+        self.employerName = employerName
+        self.companyName = companyName
 
-    def create_position(self, positionName):
+    def create_position(self, positionName, staffID):
         new_position = Position(
-            positionName=positionName,
-            employerID=self.employerID
+            positionName = positionName,
+            employerID = self.employerID,
+            staffID = staffID
         )
         db.session.add(new_position)
         db.session.commit()
@@ -97,16 +139,13 @@ class Employer(db.Model):
 class Position(db.Model):
     __tablename__ = "position"
     positionID = db.Column(db.Integer, primary_key=True)
-    positionName =  db.Column(db.String(20), nullable=False, unique=True)
+    positionName =  db.Column(db.String(20), nullable=False)
     employerID = db.Column(db.Integer, db.ForeignKey("employer.employerID"))
-    shortlist = db.relationship("Student", backref="position", lazy=True)
-    applications = db.relationship("Application", backref="position", lazy=True)
+    shortlist = db.relationship(
+        "Student",
+        secondary=shortlist_table,
+        back_populates="shortlisted_positions"
+    )
+    applications = db.relationship("Application", back_populates="position", foreign_keys=[Application.positionID])
+    staffID = db.Column(db.Integer, db.ForeignKey("staff.staffID"), nullable=False)
 
-#bridge table
-class Application(db.Model):
-    __tablename__ = "application"
-    applicationID = db.Column(db.Integer, primary_key=True)
-    positionID = db.Column(db.Integer, db.ForeignKey("position.positionID"))
-    positionName = db.Column(db.String(20), db.ForeignKey("position.positionName"))
-    studentID = db.Column(db.Integer, db.ForeignKey("student.studentID"))
-    status = db.Column(db.Boolean, nullable=False)

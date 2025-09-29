@@ -32,7 +32,6 @@ class Application(db.Model):
     positionName = db.Column(db.String(20), db.ForeignKey("position.positionName"))
     studentID = db.Column(db.Integer, db.ForeignKey("student.studentID"))
     status = db.Column(db.Boolean, nullable=False)
-
     student = db.relationship("Student", back_populates="applications", foreign_keys=[studentID])
     position = db.relationship("Position", back_populates="applications", foreign_keys=[positionID])
 

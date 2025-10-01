@@ -1,6 +1,9 @@
 from .user import create_user
 from App.database import db
-from App.models import Employer, Staff, Student
+from App.models.Employer import Employer
+from App.models.Staff import Staff
+from App.models.Student import Student
+
 
 
 def initialize():

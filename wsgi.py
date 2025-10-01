@@ -1,7 +1,12 @@
 import click, pytest, sys
 from flask.cli import with_appcontext, AppGroup
 from App.database import db, get_migrate
-from App.models import User, Employer, Staff, Student, Position, Application
+from App.models import User, Position, Application
+from App.models.Employer import Employer
+from App.models.Staff import Staff
+from App.models.Student import Student
+from App.models.Position import Position
+from App.models.Application import Application
 from App.main import create_app
 from App.controllers import ( create_user, get_all_users_json, get_all_users, initialize )
 from flask_cors import CORS

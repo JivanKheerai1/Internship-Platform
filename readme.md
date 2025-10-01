@@ -1,3 +1,39 @@
+# cli commands
+
+## Employer creates a position for staff to manage
+```bash
+$ flask create-position <employer_id> <position_name> <staff_id>
+#example: $ flask create-position 1001 web-dev 1002
+```
+
+## Staff adds a chosen student to a created position.
+```bash
+$ flask add-student <position_id> <student_id>
+#example: $ flask add-student 1 1001
+```
+
+## Employer updates the status of student applications based on their gpa. This generates a reponse for the applied position.
+```bash
+$ flask update-status <student_id> <application_id>
+#example: $ flask update-status 1001 1
+```
+
+## Shows all applications for a particular student. This includes employer response and shortlisted positions applied for.
+```bash
+$ flask view-applications <student_id>
+#example: $ flask view-applications 1001
+```
+
+
+
+
+
+
+
+
+
+
+
 ![Tests](https://github.com/uwidcit/flaskmvc/actions/workflows/dev.yml/badge.svg)
 
 # Flask MVC Template
